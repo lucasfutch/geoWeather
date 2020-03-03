@@ -22,40 +22,85 @@ import {
 import Geolocation from '@react-native-community/geolocation';
 navigator.geolocation = require('@react-native-community/geolocation');
 
-export default class App extends Component {
-  state = {
-    location: null
-  };
+import Weather from './components/Weather';
+import {API_KEY} from './utilities/WeatherApiKey';
 
-  findCoordinates = () => {
+
+// export default class App extends Component {
+//   state = {
+//     location: null
+//   };
+//
+//   findCoordinates = () => {
+//     navigator.geolocation.getCurrentPosition(
+//       position => {
+//         const location = JSON.stringify(position);
+//         this.setState({location});
+//       },
+//       error => Alert.alert(error.message),
+//       {enableHighAccuracy: true, timeout: 20000}
+//       );
+//   };
+//
+//   render() {
+//     return(
+//         <View style= {styles.container}>
+//           <TouchableOpacity onPress = {this.findCoordinates}>
+//             <Text style = {styles.welcome}>Find My Coords?</Text>
+//             <Text>Location: {this.state.location}</Text>
+//           </TouchableOpacity>
+//         </View>
+//       );
+//   }
+// }
+
+export default class App extends React.Component {
+  state = {
+    isLoading: true,
+    temperature: 0,
+    weatherCondition: null,
+    error: null
+  }
+
+  componentDidMount() {
     navigator.geolocation.getCurrentPosition(
       position => {
-        const location = JSON.stringify(position);
-        this.setState({location});
+        this.fetchWeather(position.coords.latitude, position.coords.longitude);
       },
       error => Alert.alert(error.message),
       {enableHighAccuracy: true, timeout: 20000}
-      );
-  };
+    );
+  }
+
+  fetchWeather(lat = 25, lon = 25) {
+    fetch(
+      `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&APPID=${API_KEY}&units=metric`
+    ).then(res => res.json()
+    ).then(json => {
+      console.log(json);
+      this.setState({
+        temperature : json.main.temp,
+        weatherCondition: json.weather[0].main,
+        isLoading: false
+        });
+      });
+  }
+
 
   render() {
-    return(
-        <View style= {styles.container}>
-          <TouchableOpacity onPress = {this.findCoordinates}>
-            <Text style = {styles.welcome}>Find My Coords?</Text>
-            <Text>Location: {this.state.location}</Text>
-          </TouchableOpacity>
-        </View>
-      );
+    const {isLoading} = this.state;
+
+    return (
+      <View style = {styles.container}>
+        {isLoading ? (<Text>Fetching The Weather</Text>) : (<Weather weather = {this.state.weatherCondition} temperature = {this.state.temperature}/>)}
+      </View>
+    );
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF'
   },
   welcome: {
     fontSize: 20,
